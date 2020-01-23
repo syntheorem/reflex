@@ -1,5 +1,5 @@
 Name: reflex
-Version: 0.6.3
+Version: 0.6.4
 Synopsis: Higher-order Functional Reactive Programming
 Description: Reflex is a high-performance, deterministic, higher-order Functional Reactive Programming system
 License: BSD3
@@ -306,16 +306,19 @@ test-suite RequesterT
   main-is: RequesterT.hs
   hs-source-dirs: test
   build-depends: base
+               , constraints
+               , constraints-extras
                , containers
                , deepseq
-               , dependent-sum
                , dependent-map
+               , dependent-sum
                , lens
                , mtl
+               , ref-tf
+               , reflex
+               , text
                , these
                , transformers
-               , reflex
-               , ref-tf
 
   if flag(split-these)
     build-depends: these-lens
@@ -323,6 +326,21 @@ test-suite RequesterT
   other-modules:
     Reflex.TestPlan
     Reflex.Plan.Pure
+    Test.Run
+
+test-suite Adjustable
+  default-language: Haskell2010
+  type: exitcode-stdio-1.0
+  main-is: Adjustable.hs
+  hs-source-dirs: test
+  build-depends: base
+               , containers
+               , dependent-sum
+               , reflex
+               , ref-tf
+               , these
+
+  other-modules:
     Test.Run
 
 test-suite QueryT
