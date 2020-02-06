@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -17,17 +18,36 @@ module Reflex.Workflow (
   , workflowView
   , mapWorkflow
   , mapWorkflowCheap
+  , runWorkflow
+
+  , Wizard (..)
+  , step
+  , runWizard
+
+  , Stack (..)
+  , frame
+  , stackHold
+  , stackView
+
+  , replay
   ) where
 
 import Control.Arrow ((***))
 import Control.Lens (makePrisms, preview)
 import Control.Monad (ap, (<=<), (>=>))
-import Control.Monad.Fix (MonadFix)
+import Control.Monad.Cont (ContT(..), MonadCont, callCC)
+import Control.Monad.Fix (MonadFix, fix)
+import Control.Monad.Trans (lift)
 import Data.Functor.Bind
 import Data.Maybe (fromMaybe)
 import Reflex.Class
 import Reflex.Adjustable.Class
 import Reflex.PostBuild.Class
+
+import Unsafe.Coerce
+
+replay :: MonadCont m => m (m a)
+replay = callCC $ return . fix
 
 --------------------------------------------------------------------------------
 -- Workflow
@@ -65,74 +85,133 @@ mapWorkflowCheap f (Workflow x) = Workflow (fmap (f *** fmapCheap (mapWorkflowCh
 --------------------------------------------------------------------------------
 -- Wizard
 --------------------------------------------------------------------------------
-newtype Wizard t m a = Wizard { unWizard :: m (WizardInternal t m a) } deriving Functor
-data WizardInternal t m a
-  = WizardInternal_Terminal a
-  | WizardInternal_Update (Event t a)
-  | WizardInternal_Replace (Event t (Wizard t m a))
+
+-- Core
+newtype W t m a = W { unW :: m (WInternal t m a) } deriving Functor
+data WInternal t m a
+  = WInternal_Terminal a
+  | WInternal_Update (Event t a)
+  | WInternal_Replace (Event t (W t m a))
   deriving Functor
-makePrisms ''WizardInternal
+makePrisms ''WInternal
 
-step :: Functor m => m (Event t a) -> Wizard t m a
-step = Wizard . fmap WizardInternal_Update
+stepW :: Functor m => m (Event t a) -> W t m a
+stepW = W . fmap WInternal_Update
 
-runWizard :: forall t m a. (Adjustable t m, MonadHold t m, MonadFix m, PostBuild t m) => Wizard t m a -> m (Event t a)
-runWizard w = mdo
-  let getReplace = fromMaybe never . preview _WizardInternal_Replace
-      getUpdate = fromMaybe never . preview _WizardInternal_Update
-  (wint0, wintEv) <- runWithReplace (unWizard w) $ leftmost [unWizard <$> replace, pure . WizardInternal_Terminal <$> updates]
+runW :: forall t m a. (Adjustable t m, MonadHold t m, MonadFix m, PostBuild t m) => W t m a -> m (Event t a)
+runW w = mdo
+  let getReplace = fromMaybe never . preview _WInternal_Replace
+      getUpdate = fromMaybe never . preview _WInternal_Update
+  (wint0, wintEv) <- runWithReplace (unW w) $ leftmost [unW <$> replace, pure . WInternal_Terminal <$> updates]
   replace <- switchHold (getReplace wint0) (getReplace <$> wintEv)
   updates <- switchHold (getUpdate wint0) (getUpdate <$> wintEv)
   pb <- getPostBuild
-  let terminal0 = maybe never (<$ pb) $ preview _WizardInternal_Terminal wint0
-      terminal = fmapMaybe (preview _WizardInternal_Terminal) wintEv
+  let terminal0 = maybe never (<$ pb) $ preview _WInternal_Terminal wint0
+      terminal = fmapMaybe (preview _WInternal_Terminal) wintEv
   pure $ leftmost [terminal0, terminal]
 
-instance (Monad m, Reflex t) => Apply (Wizard t m) where
+instance (Monad m, Reflex t) => Apply (W t m) where
   (<.>) = ap
 
-instance (Monad m, Reflex t) => Applicative (Wizard t m) where
-  pure = Wizard . pure . WizardInternal_Terminal
+instance (Monad m, Reflex t) => Applicative (W t m) where
+  pure = W . pure . WInternal_Terminal
   (<*>) = (<.>)
 
-instance (Monad m, Reflex t) => Bind (Wizard t m) where
-  join ww = Wizard $ unWizard ww >>= \case
-    WizardInternal_Terminal (Wizard w) -> w
-    WizardInternal_Update ev -> pure $ WizardInternal_Replace ev
-    WizardInternal_Replace ev -> pure $ WizardInternal_Replace $ ffor ev join
+instance (Monad m, Reflex t) => Bind (W t m) where
+  join ww = W $ unW ww >>= \case
+    WInternal_Terminal (W w) -> w
+    WInternal_Update ev -> pure $ WInternal_Replace ev
+    WInternal_Replace ev -> pure $ WInternal_Replace $ ffor ev join
 
-instance (Monad m, Reflex t) => Monad (Wizard t m) where
+instance (Monad m, Reflex t) => Monad (W t m) where
   (>>=) = (>>-)
 
+
+-- Enhanced
+newtype Wizard t m a = Wizard { unWizard :: forall r. ContT r (W t m) a } deriving Functor
+
+instance Apply (Wizard t m) where
+  (<.>) = ap
+
+instance Applicative (Wizard t m) where
+  pure a = Wizard $ pure a
+  (<*>) = (<*>)
+
+instance Bind (Wizard t m) where
+  join ww = Wizard $ join $ fmap unWizard $ unWizard ww
+
+instance Monad (Wizard t m) where
+  (>>=) = (>>-)
+
+instance MonadCont (Wizard t m) where
+  callCC f = Wizard $ callCC $ \g ->
+    unWizard $ f $ \a -> Wizard $ unsafeCoerce $ g a -- TODO: figure out the rank shenanigans needed to prove this
+
+step :: (Reflex t, Monad m) => m (Event t a) -> Wizard t m a
+step a = Wizard $ lift $ stepW a
+
+runWizard :: (Adjustable t m, MonadHold t m, MonadFix m, PostBuild t m) => Wizard t m a -> m (Event t a)
+runWizard = runW . flip runContT pure . unWizard
 --------------------------------------------------------------------------------
 -- Stack
 --------------------------------------------------------------------------------
-newtype Stack t m a = Stack { unStack :: m (a, Event t a) } deriving Functor
 
-frame :: m (a, Event t a) -> Stack t m a
-frame = Stack
+-- Core
+newtype S t m a = S { unS :: m (a, Event t a) } deriving Functor
 
-stackHold :: MonadHold t m => Stack t m a -> m (Dynamic t a)
-stackHold = unStack >=> uncurry holdDyn
+frameS :: m (a, Event t a) -> S t m a
+frameS = S
 
-stackView :: PostBuild t m => Stack t m a -> m (Event t a)
-stackView = unStack >=> \(a, ev) -> do
+sHold :: MonadHold t m => S t m a -> m (Dynamic t a)
+sHold = unS >=> uncurry holdDyn
+
+sView :: PostBuild t m => S t m a -> m (Event t a)
+sView = unS >=> \(a, ev) -> do
   pb <- getPostBuild
   pure $ leftmost [a <$ pb, ev]
 
-instance (Adjustable t m, MonadHold t m, PostBuild t m) => Apply (Stack t m) where
+instance (Adjustable t m, MonadHold t m, PostBuild t m) => Apply (S t m) where
   (<.>) = ap
 
-instance (Adjustable t m, MonadHold t m, PostBuild t m) => Applicative (Stack t m) where
-  pure = Stack . pure . (, never)
+instance (Adjustable t m, MonadHold t m, PostBuild t m) => Applicative (S t m) where
+  pure = S . pure . (, never)
   (<*>) = (<.>)
 
-instance (Adjustable t m, MonadHold t m, PostBuild t m) => Bind (Stack t m) where
-  join ss = frame $ do
-    (s0, sEv) <- unStack ss
-    ((a0,ev0), ev) <- runWithReplace (unStack s0) $ unStack <$> sEv
+instance (Adjustable t m, MonadHold t m, PostBuild t m) => Bind (S t m) where
+  join ss = frameS $ do
+    (s0, sEv) <- unS ss
+    ((a0,ev0), ev) <- runWithReplace (unS s0) $ unS <$> sEv
     e <- switchHold never $ fmap snd ev
     pure (a0, leftmost [ev0, fmap fst ev, e])
 
-instance (Adjustable t m, MonadHold t m, PostBuild t m) => Monad (Stack t m) where
+instance (Adjustable t m, MonadHold t m, PostBuild t m) => Monad (S t m) where
   (>>=) = (>>-)
+
+-- Enhanced
+newtype Stack t m a = Stack { unStack :: forall r. ContT r (S t m) a } deriving Functor
+
+frame :: (Adjustable t m, MonadHold t m, PostBuild t m) => m (a, Event t a) -> Stack t m a
+frame a = Stack $ lift $ frameS a
+
+stackHold :: (Adjustable t m, MonadHold t m, PostBuild t m) => Stack t m a -> m (Dynamic t a)
+stackHold = sHold . flip runContT pure . unStack
+
+stackView :: (Adjustable t m, MonadHold t m, PostBuild t m) => Stack t m a -> m (Event t a)
+stackView = sView . flip runContT pure . unStack
+
+instance Apply (Stack t m) where
+  (<.>) = ap
+
+instance Applicative (Stack t m) where
+  pure a = Stack $ pure a
+  (<*>) = (<*>)
+
+instance Bind (Stack t m) where
+  join ww = Stack $ join $ fmap unStack $ unStack ww
+
+instance Monad (Stack t m) where
+  (>>=) = (>>-)
+
+instance MonadCont (Stack t m) where
+  callCC f = Stack $ callCC $ \g ->
+    unStack $ f $ \a -> Stack $ unsafeCoerce $ g a  -- TODO: figure out the rank shenanigans needed to prove this
