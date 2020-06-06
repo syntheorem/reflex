@@ -1,7 +1,7 @@
 Name: reflex
-Version: 0.6.4.1
+Version: 0.7.1.0
 Synopsis: Higher-order Functional Reactive Programming
-Description: Reflex is a high-performance, deterministic, higher-order Functional Reactive Programming system
+Description: Reflex is a high-performance, deterministic, higher-order Functional Reactive Programming system: <https://reflex-frp.org>
 License: BSD3
 License-file: LICENSE
 Author: Ryan Trinkle
@@ -119,6 +119,7 @@ library
     Reflex.FastWeak,
     Reflex.FunctorMaybe,
     Reflex.Host.Class,
+    Reflex.Host.Headless,
     Reflex.Network,
     Reflex.NotReady.Class,
     Reflex.PerformEvent.Base,
@@ -243,7 +244,7 @@ test-suite hlint
                , directory
                , filepath
                , filemanip
-               , hlint < 2.1 || >= 2.2.2
+               , hlint (< 2.1 || >= 2.2.2) && < 3
   if impl(ghcjs)
     buildable: False
 
