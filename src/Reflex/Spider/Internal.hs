@@ -2611,7 +2611,7 @@ instance HasSpiderTimeline x => Reflex.Class.MonadHold (SpiderTimeline x) (Spide
   headE e = runFrame . runSpiderHostFrame $ Reflex.Class.headE e
   {-# INLINABLE now #-}
   now = runFrame . runSpiderHostFrame $ Reflex.Class.now
-  
+
 
 instance HasSpiderTimeline x => Reflex.Class.MonadSample (SpiderTimeline x) (SpiderHostFrame x) where
   sample = SpiderHostFrame . readBehaviorUntracked . unSpiderBehavior --TODO: This can cause problems with laziness, so we should get rid of it if we can
@@ -2775,7 +2775,7 @@ instance HasSpiderTimeline x => R.Reflex (SpiderTimeline x) where
   fanG e = R.EventSelectorG $ SpiderEvent . selectG (fanG (unSpiderEvent e))
   {-# INLINABLE mergeG #-}
   mergeG
-    :: forall (k :: k2 -> *) q (v :: k2 -> *). GCompare k
+    :: forall k2 (k :: k2 -> *) q (v :: k2 -> *). GCompare k
     => (forall a. q a -> R.Event (SpiderTimeline x) (v a))
     -> DMap k q
     -> R.Event (SpiderTimeline x) (DMap k v)
