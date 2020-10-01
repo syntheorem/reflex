@@ -31,10 +31,12 @@ class Monad m => NotReady t m | m -> t where
   notReadyUntil :: Event t a -> m ()
   default notReadyUntil :: (MonadTrans f, m ~ f m', NotReady t m') => Event t a -> m ()
   notReadyUntil = lift . notReadyUntil
+  {-# INLINABLE notReadyUntil #-}
 
   notReady :: m ()
   default notReady :: (MonadTrans f, m ~ f m', NotReady t m') => m ()
   notReady = lift notReady
+  {-# INLINABLE notReady #-}
 
 instance NotReady t m => NotReady t (ReaderT r m) where
   notReadyUntil = lift . notReadyUntil

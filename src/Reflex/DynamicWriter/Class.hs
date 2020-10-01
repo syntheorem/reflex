@@ -1,8 +1,10 @@
 -- | This module defines the 'DynamicWriter' class.
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 #ifdef USE_REFLEX_OPTIMIZER
 {-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
@@ -12,7 +14,7 @@ module Reflex.DynamicWriter.Class
   , DynamicWriter(..)
   ) where
 
-import Control.Monad.Reader (ReaderT, lift)
+import Control.Monad.Reader (ReaderT, MonadTrans, lift)
 import Reflex.Class (Dynamic)
 
 {-# DEPRECATED MonadDynamicWriter "Use 'DynamicWriter' instead" #-}
@@ -23,6 +25,9 @@ type MonadDynamicWriter = DynamicWriter
 -- and combines them monoidally to provide a 'Dynamic' result.
 class (Monad m, Monoid w) => DynamicWriter t w m | m -> t w where
   tellDyn :: Dynamic t w -> m ()
+  default tellDyn :: (m ~ f m', MonadTrans f, DynamicWriter t w m') => Dynamic t w -> m ()
+  tellDyn = lift . tellDyn
+  {-# INLINABLE tellDyn #-}
 
 instance DynamicWriter t w m => DynamicWriter t w (ReaderT r m) where
   tellDyn = lift . tellDyn

@@ -389,6 +389,9 @@ instance (Reflex t, Default a) => Default (Dynamic t a) where
 class (Applicative m, Monad m) => MonadSample t m | m -> t where
   -- | Get the current value in the 'Behavior'
   sample :: Behavior t a -> m a
+  default sample :: (m ~ f m', MonadTrans f, MonadSample t m') => Behavior t a -> m a
+  sample = lift . sample
+  {-# INLINABLE sample #-}
 
 -- | 'MonadHold' designates monads that can create new 'Behavior's based on
 -- 'Event's; usually this will be 'PushM' or a monad based on it.  'MonadHold'
@@ -403,24 +406,34 @@ class MonadSample t m => MonadHold t m where
   hold :: a -> Event t a -> m (Behavior t a)
   default hold :: (m ~ f m', MonadTrans f, MonadHold t m') => a -> Event t a -> m (Behavior t a)
   hold v0 = lift . hold v0
+  {-# INLINABLE hold #-}
+
   -- | Create a 'Dynamic' value using the given initial value that changes every
   -- time the 'Event' occurs.
   holdDyn :: a -> Event t a -> m (Dynamic t a)
   default holdDyn :: (m ~ f m', MonadTrans f, MonadHold t m') => a -> Event t a -> m (Dynamic t a)
   holdDyn v0 = lift . holdDyn v0
+  {-# INLINABLE holdDyn #-}
+
   -- | Create an 'Incremental' value using the given initial value that changes
   -- every time the 'Event' occurs.
   holdIncremental :: Patch p => PatchTarget p -> Event t p -> m (Incremental t p)
   default holdIncremental :: (Patch p, m ~ f m', MonadTrans f, MonadHold t m') => PatchTarget p -> Event t p -> m (Incremental t p)
   holdIncremental v0 = lift . holdIncremental v0
+  {-# INLINABLE holdIncremental #-}
+
   buildDynamic :: PushM t a -> Event t a -> m (Dynamic t a)
-  {-
-  default buildDynamic :: (m ~ f m', MonadTrans f, MonadHold t m') => PullM t a -> Event t a -> m (Dynamic t a)
+  default buildDynamic :: (m ~ f m', MonadTrans f, MonadHold t m') => PushM t a -> Event t a -> m (Dynamic t a)
   buildDynamic getV0 = lift . buildDynamic getV0
-  -}
+  {-# INLINABLE buildDynamic #-}
+
   -- | Create a new 'Event' that only occurs only once, on the first occurrence of
   -- the supplied 'Event'.
   headE :: Event t a -> m (Event t a)
+  default headE :: (m ~ f m', MonadTrans f, MonadHold t m') => Event t a -> m (Event t a)
+  headE = lift . headE
+  {-# INLINABLE headE #-}
+
   -- | An event which only occurs at the current moment in time, such that:
   --
   -- > coincidence (pushAlways (\a -> (a <$) <$> now) e) = e
@@ -428,6 +441,7 @@ class MonadSample t m => MonadHold t m where
   now :: m (Event t ())
   default now :: (m ~ f m', MonadTrans f, MonadHold t m') => m (Event t ())
   now = lift now
+  {-# INLINABLE now #-}
 
 -- | Accumulate an 'Incremental' with the supplied initial value and the firings of the provided 'Event',
 -- using the combining function to produce a patch.

@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -73,6 +74,9 @@ class (Reflex t, Monad m) => MonadSubscribeEvent t m | m -> t where
   --
   -- It's safe to call this function multiple times.
   subscribeEvent :: Event t a -> m (EventHandle t a)
+  default subscribeEvent :: (m ~ f m', MonadTrans f, MonadSubscribeEvent t m') => Event t a -> m (EventHandle t a)
+  subscribeEvent = lift . subscribeEvent
+  {-# INLINABLE subscribeEvent #-}
 
 -- | Monad that allows to read events' values.
 class (ReflexHost t, Applicative m, Monad m) => MonadReadEvent t m | m -> t where
@@ -104,7 +108,16 @@ class (Applicative m, Monad m) => MonadReflexCreateTrigger t m | m -> t where
   -- Note: An event may be set up multiple times. So after the teardown action
   -- is executed, the event may still be set up again in the future.
   newEventWithTrigger :: (EventTrigger t a -> IO (IO ())) -> m (Event t a)
+  default newEventWithTrigger :: (m ~ f m', MonadTrans f, MonadReflexCreateTrigger t m')
+                              => (EventTrigger t a -> IO (IO ())) -> m (Event t a)
+  newEventWithTrigger = lift . newEventWithTrigger
+  {-# INLINABLE newEventWithTrigger #-}
+
   newFanEventWithTrigger :: GCompare k => (forall a. k a -> EventTrigger t a -> IO (IO ())) -> m (EventSelector t k)
+  default newFanEventWithTrigger :: (m ~ f m', MonadTrans f, MonadReflexCreateTrigger t m', GCompare k)
+                                 => (forall a. k a -> EventTrigger t a -> IO (IO ())) -> m (EventSelector t k)
+  newFanEventWithTrigger f = lift $ newFanEventWithTrigger f
+  {-# INLINABLE newFanEventWithTrigger #-}
 
 -- | 'MonadReflexHost' designates monads that can run reflex frames.
 class ( ReflexHost t
@@ -130,6 +143,10 @@ class ( ReflexHost t
   -- using this function. The read callback can be used to read output events
   -- and perform a corresponding response action to the external event.
   fireEventsAndRead :: [DSum (EventTrigger t) Identity] -> ReadPhase m a -> m a
+  default fireEventsAndRead :: (m ~ f m', MonadTrans f, MonadReflexHost t m', ReadPhase m ~ ReadPhase m')
+                            => [DSum (EventTrigger t) Identity] -> ReadPhase m a -> m a
+  fireEventsAndRead events = lift . fireEventsAndRead events
+  {-# INLINABLE fireEventsAndRead #-}
 
   -- | Run a frame without any events firing.
   --
@@ -141,6 +158,9 @@ class ( ReflexHost t
   -- This function is commonly used to set up the basic event network when the
   -- application starts up.
   runHostFrame :: HostFrame t a -> m a
+  default runHostFrame :: (m ~ f m', MonadTrans f, MonadReflexHost t m') => HostFrame t a -> m a
+  runHostFrame = lift . runHostFrame
+  {-# INLINABLE runHostFrame #-}
 
 -- | Like 'fireEventsAndRead', but without reading any events.
 fireEvents :: MonadReflexHost t m => [DSum (EventTrigger t) Identity] -> m ()

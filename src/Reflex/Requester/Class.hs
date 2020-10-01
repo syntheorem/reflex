@@ -4,6 +4,7 @@
 -- events and send them over a single channel, then distribute the results back
 -- out efficiently to their original request sites.
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RecursiveDo #-}
@@ -38,8 +39,17 @@ class (Reflex t, Monad m) => Requester t m | m -> t where
   -- | Emit a request whenever the given 'Event' fires, and return responses in
   -- the resulting 'Event'.
   requesting :: Event t (Request m a) -> m (Event t (Response m a))
+  default requesting :: (m ~ f m', MonadTrans f, Requester t m', Request m ~ Request m', Response m ~ Response m')
+                     => Event t (Request m a) -> m (Event t (Response m a))
+  requesting = lift . requesting
+  {-# INLINABLE requesting #-}
+
   -- | Emit a request whenever the given 'Event' fires, and ignore all responses.
   requesting_ :: Event t (Request m a) -> m ()
+  default requesting_ :: (m ~ f m', MonadTrans f, Requester t m', Request m ~ Request m')
+                      => Event t (Request m a) -> m ()
+  requesting_ = lift . requesting_
+  {-# INLINABLE requesting_ #-}
 
 
 instance Requester t m => Requester t (ReaderT r m) where

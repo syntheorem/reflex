@@ -2,6 +2,7 @@
 -- notified when it, and any action it's a part of, has finished executing.
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -30,6 +31,9 @@ import qualified Control.Monad.State.Strict as Strict
 class (Reflex t, Monad m) => PostBuild t m | m -> t where
   -- | Retrieve the post-build 'Event' for this action.
   getPostBuild :: m (Event t ())
+  default getPostBuild :: (m ~ f m', MonadTrans f, PostBuild t m') => m (Event t ())
+  getPostBuild = lift getPostBuild
+  {-# INLINABLE getPostBuild #-}
 
 instance PostBuild t m => PostBuild t (ReaderT r m) where
   getPostBuild = lift getPostBuild
@@ -39,3 +43,4 @@ instance PostBuild t m => PostBuild t (StateT s m) where
 
 instance PostBuild t m => PostBuild t (Strict.StateT s m) where
   getPostBuild = lift getPostBuild
+

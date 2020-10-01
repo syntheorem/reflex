@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -135,8 +136,19 @@ combineSelectedCounts (SelectedCount i) (SelectedCount j) = if i == negate j the
 -- used interface.
 class (Group q, Additive q, Query q, Monad m) => MonadQuery t q m | m -> q t where
   tellQueryIncremental :: Incremental t (AdditivePatch q) -> m ()
+  default tellQueryIncremental :: (m ~ f m', MonadTrans f, MonadQuery t q m') => Incremental t (AdditivePatch q) -> m ()
+  tellQueryIncremental = lift . tellQueryIncremental
+  {-# INLINABLE tellQueryIncremental #-}
+
   askQueryResult :: m (Dynamic t (QueryResult q))
+  default askQueryResult :: (m ~ f m', MonadTrans f, MonadQuery t q m') => m (Dynamic t (QueryResult q))
+  askQueryResult = lift askQueryResult
+  {-# INLINABLE askQueryResult #-}
+
   queryIncremental :: Incremental t (AdditivePatch q) -> m (Dynamic t (QueryResult q))
+  default queryIncremental :: (m ~ f m', MonadTrans f, MonadQuery t q m') => Incremental t (AdditivePatch q) -> m (Dynamic t (QueryResult q))
+  queryIncremental = lift . queryIncremental
+  {-# INLINABLE queryIncremental #-}
 
 instance MonadQuery t q m => MonadQuery t q (ReaderT r m) where
   tellQueryIncremental = lift . tellQueryIncremental
