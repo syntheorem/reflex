@@ -47,22 +47,7 @@ class Monad m => TriggerEvent t m | m -> t where
   newEventWithLazyTriggerWithOnComplete = lift . newEventWithLazyTriggerWithOnComplete
   {-# INLINABLE newEventWithLazyTriggerWithOnComplete #-}
 
-instance TriggerEvent t m => TriggerEvent t (ReaderT r m) where
-  newTriggerEvent = lift newTriggerEvent
-  newTriggerEventWithOnComplete = lift newTriggerEventWithOnComplete
-  newEventWithLazyTriggerWithOnComplete = lift . newEventWithLazyTriggerWithOnComplete
-
-instance TriggerEvent t m => TriggerEvent t (StateT s m) where
-  newTriggerEvent = lift newTriggerEvent
-  newTriggerEventWithOnComplete = lift newTriggerEventWithOnComplete
-  newEventWithLazyTriggerWithOnComplete = lift . newEventWithLazyTriggerWithOnComplete
-
-instance TriggerEvent t m => TriggerEvent t (Strict.StateT s m) where
-  newTriggerEvent = lift newTriggerEvent
-  newTriggerEventWithOnComplete = lift newTriggerEventWithOnComplete
-  newEventWithLazyTriggerWithOnComplete = lift . newEventWithLazyTriggerWithOnComplete
-
-instance TriggerEvent t m => TriggerEvent t (MaybeT m) where
-  newTriggerEvent = lift newTriggerEvent
-  newTriggerEventWithOnComplete = lift newTriggerEventWithOnComplete
-  newEventWithLazyTriggerWithOnComplete = lift . newEventWithLazyTriggerWithOnComplete
+instance TriggerEvent t m => TriggerEvent t (ReaderT r m)
+instance TriggerEvent t m => TriggerEvent t (StateT s m)
+instance TriggerEvent t m => TriggerEvent t (Strict.StateT s m)
+instance TriggerEvent t m => TriggerEvent t (MaybeT m)

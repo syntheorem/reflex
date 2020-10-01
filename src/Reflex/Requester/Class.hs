@@ -55,20 +55,14 @@ class (Reflex t, Monad m) => Requester t m | m -> t where
 instance Requester t m => Requester t (ReaderT r m) where
   type Request (ReaderT r m) = Request m
   type Response (ReaderT r m) = Response m
-  requesting = lift . requesting
-  requesting_ = lift . requesting_
 
 instance Requester t m => Requester t (StateT s m) where
   type Request (StateT s m) = Request m
   type Response (StateT s m) = Response m
-  requesting = lift . requesting
-  requesting_ = lift . requesting_
 
 instance Requester t m => Requester t (Lazy.StateT s m) where
   type Request (Lazy.StateT s m) = Request m
   type Response (Lazy.StateT s m) = Response m
-  requesting = lift . requesting
-  requesting_ = lift . requesting_
 
 -- | Emit a request whenever the given 'Event' fires, and unwrap the responses
 -- before returning them.  @Response m@ must be 'Identity'.

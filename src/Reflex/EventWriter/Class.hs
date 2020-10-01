@@ -26,5 +26,4 @@ class (Monad m, Semigroup w) => EventWriter t w m | m -> t w where
   tellEvent = lift . tellEvent
   {-# INLINABLE tellEvent #-}
 
-instance EventWriter t w m => EventWriter t w (ReaderT r m) where
-  tellEvent = lift . tellEvent
+instance EventWriter t w m => EventWriter t w (ReaderT r m)

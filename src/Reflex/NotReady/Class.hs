@@ -38,42 +38,16 @@ class Monad m => NotReady t m | m -> t where
   notReady = lift notReady
   {-# INLINABLE notReady #-}
 
-instance NotReady t m => NotReady t (ReaderT r m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance (NotReady t m, Monoid w) => NotReady t (WriterT w m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (PostBuildT t m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (EventWriterT t w m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (DynamicWriterT t w m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (BehaviorWriterT t w m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (QueryT t q m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
+instance NotReady t m => NotReady t (ReaderT r m)
+instance (NotReady t m, Monoid w) => NotReady t (WriterT w m)
+instance NotReady t m => NotReady t (PostBuildT t m)
+instance NotReady t m => NotReady t (EventWriterT t w m)
+instance NotReady t m => NotReady t (DynamicWriterT t w m)
+instance NotReady t m => NotReady t (BehaviorWriterT t w m)
+instance NotReady t m => NotReady t (QueryT t q m)
+instance NotReady t m => NotReady t (RequesterT t request response m)
+instance NotReady t m => NotReady t (TriggerEventT t m)
 
 instance (ReflexHost t, NotReady t (HostFrame t)) => NotReady t (PerformEventT t m) where
   notReadyUntil = PerformEventT . notReadyUntil
   notReady = PerformEventT notReady
-
-instance NotReady t m => NotReady t (RequesterT t request response m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady
-
-instance NotReady t m => NotReady t (TriggerEventT t m) where
-  notReadyUntil = lift . notReadyUntil
-  notReady = lift notReady

@@ -211,89 +211,44 @@ fireEventRefAndRead mtRef input e = do
 -- Instances
 --------------------------------------------------------------------------------
 
-instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ReaderT r m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ReaderT r m) where
-  subscribeEvent = lift . subscribeEvent
+instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ReaderT r m)
+instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ReaderT r m)
 
 instance MonadReflexHost t m => MonadReflexHost t (ReaderT r m) where
   type ReadPhase (ReaderT r m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-instance (MonadReflexCreateTrigger t m, Monoid w) => MonadReflexCreateTrigger t (WriterT w m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance (MonadSubscribeEvent t m, Monoid w) => MonadSubscribeEvent t (WriterT w m) where
-  subscribeEvent = lift . subscribeEvent
+instance (MonadReflexCreateTrigger t m, Monoid w) => MonadReflexCreateTrigger t (WriterT w m)
+instance (MonadSubscribeEvent t m, Monoid w) => MonadSubscribeEvent t (WriterT w m)
 
 instance (MonadReflexHost t m, Monoid w) => MonadReflexHost t (WriterT w m) where
   type ReadPhase (WriterT w m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (StateT s m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance MonadSubscribeEvent t m => MonadSubscribeEvent t (StateT r m) where
-  subscribeEvent = lift . subscribeEvent
+instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (StateT s m)
+instance MonadSubscribeEvent t m => MonadSubscribeEvent t (StateT r m)
 
 instance MonadReflexHost t m => MonadReflexHost t (StateT s m) where
   type ReadPhase (StateT s m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-
-instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (Strict.StateT s m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance MonadSubscribeEvent t m => MonadSubscribeEvent t (Strict.StateT r m) where
-  subscribeEvent = lift . subscribeEvent
+instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (Strict.StateT s m)
+instance MonadSubscribeEvent t m => MonadSubscribeEvent t (Strict.StateT r m)
 
 instance MonadReflexHost t m => MonadReflexHost t (Strict.StateT s m) where
   type ReadPhase (Strict.StateT s m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-
-
-instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ContT r m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ContT r m) where
-  subscribeEvent = lift . subscribeEvent
+instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ContT r m)
+instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ContT r m)
 
 instance MonadReflexHost t m => MonadReflexHost t (ContT r m) where
   type ReadPhase (ContT r m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ExceptT e m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ExceptT r m) where
-  subscribeEvent = lift . subscribeEvent
+instance MonadReflexCreateTrigger t m => MonadReflexCreateTrigger t (ExceptT e m)
+instance MonadSubscribeEvent t m => MonadSubscribeEvent t (ExceptT r m)
 
 instance MonadReflexHost t m => MonadReflexHost t (ExceptT e m) where
   type ReadPhase (ExceptT e m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame
 
-instance (MonadReflexCreateTrigger t m, Monoid w) => MonadReflexCreateTrigger t (RWST r w s m) where
-  newEventWithTrigger = lift . newEventWithTrigger
-  newFanEventWithTrigger initializer = lift $ newFanEventWithTrigger initializer
-
-instance (MonadSubscribeEvent t m, Monoid w) => MonadSubscribeEvent t (RWST r w s m) where
-  subscribeEvent = lift . subscribeEvent
+instance (MonadReflexCreateTrigger t m, Monoid w) => MonadReflexCreateTrigger t (RWST r w s m)
+instance (MonadSubscribeEvent t m, Monoid w) => MonadSubscribeEvent t (RWST r w s m)
 
 instance (MonadReflexHost t m, Monoid w) => MonadReflexHost t (RWST r w s m) where
   type ReadPhase (RWST r w s m) = ReadPhase m
-  fireEventsAndRead dm a = lift $ fireEventsAndRead dm a
-  runHostFrame = lift . runHostFrame

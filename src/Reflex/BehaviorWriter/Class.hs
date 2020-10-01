@@ -32,5 +32,4 @@ class (Monad m, Monoid w) => BehaviorWriter t w m | m -> t w where
   tellBehavior = lift . tellBehavior
   {-# INLINABLE tellBehavior #-}
 
-instance BehaviorWriter t w m => BehaviorWriter t w (ReaderT r m) where
-  tellBehavior = lift . tellBehavior
+instance BehaviorWriter t w m => BehaviorWriter t w (ReaderT r m)

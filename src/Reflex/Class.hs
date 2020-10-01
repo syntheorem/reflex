@@ -578,71 +578,23 @@ newtype EventSelectorInt t a = EventSelectorInt { selectInt :: Int -> Event t a 
 -- Instances
 --------------------------------------------------------------------------------
 
-instance MonadSample t m => MonadSample t (ReaderT r m) where
-  sample = lift . sample
+instance MonadSample t m => MonadSample t (ReaderT r m)
+instance MonadHold t m => MonadHold t (ReaderT r m)
 
-instance MonadHold t m => MonadHold t (ReaderT r m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
+instance (MonadSample t m, Monoid r) => MonadSample t (WriterT r m)
+instance (MonadHold t m, Monoid r) => MonadHold t (WriterT r m)
 
-instance (MonadSample t m, Monoid r) => MonadSample t (WriterT r m) where
-  sample = lift . sample
+instance MonadSample t m => MonadSample t (StateT s m)
+instance MonadHold t m => MonadHold t (StateT s m)
 
-instance (MonadHold t m, Monoid r) => MonadHold t (WriterT r m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
+instance MonadSample t m => MonadSample t (ExceptT e m)
+instance MonadHold t m => MonadHold t (ExceptT e m)
 
-instance MonadSample t m => MonadSample t (StateT s m) where
-  sample = lift . sample
+instance (MonadSample t m, Monoid w) => MonadSample t (RWST r w s m)
+instance (MonadHold t m, Monoid w) => MonadHold t (RWST r w s m)
 
-instance MonadHold t m => MonadHold t (StateT s m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
-
-instance MonadSample t m => MonadSample t (ExceptT e m) where
-  sample = lift . sample
-
-instance MonadHold t m => MonadHold t (ExceptT e m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
-
-instance (MonadSample t m, Monoid w) => MonadSample t (RWST r w s m) where
-  sample = lift . sample
-
-instance (MonadHold t m, Monoid w) => MonadHold t (RWST r w s m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
-
-instance MonadSample t m => MonadSample t (ContT r m) where
-  sample = lift . sample
-
-instance MonadHold t m => MonadHold t (ContT r m) where
-  hold a0 = lift . hold a0
-  holdDyn a0 = lift . holdDyn a0
-  holdIncremental a0 = lift . holdIncremental a0
-  buildDynamic a0 = lift . buildDynamic a0
-  headE = lift . headE
-  now = lift now
+instance MonadSample t m => MonadSample t (ContT r m)
+instance MonadHold t m => MonadHold t (ContT r m)
 
 --------------------------------------------------------------------------------
 -- Convenience functions

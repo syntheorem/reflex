@@ -35,12 +35,7 @@ class (Reflex t, Monad m) => PostBuild t m | m -> t where
   getPostBuild = lift getPostBuild
   {-# INLINABLE getPostBuild #-}
 
-instance PostBuild t m => PostBuild t (ReaderT r m) where
-  getPostBuild = lift getPostBuild
-
-instance PostBuild t m => PostBuild t (StateT s m) where
-  getPostBuild = lift getPostBuild
-
-instance PostBuild t m => PostBuild t (Strict.StateT s m) where
-  getPostBuild = lift getPostBuild
+instance PostBuild t m => PostBuild t (ReaderT r m)
+instance PostBuild t m => PostBuild t (StateT s m)
+instance PostBuild t m => PostBuild t (Strict.StateT s m)
 

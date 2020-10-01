@@ -150,10 +150,7 @@ class (Group q, Additive q, Query q, Monad m) => MonadQuery t q m | m -> q t whe
   queryIncremental = lift . queryIncremental
   {-# INLINABLE queryIncremental #-}
 
-instance MonadQuery t q m => MonadQuery t q (ReaderT r m) where
-  tellQueryIncremental = lift . tellQueryIncremental
-  askQueryResult = lift askQueryResult
-  queryIncremental = lift . queryIncremental
+instance MonadQuery t q m => MonadQuery t q (ReaderT r m)
 
 -- | Produce and send an 'Incremental' 'Query' from a 'Dynamic' 'Query'.
 tellQueryDyn :: (Reflex t, MonadQuery t q m) => Dynamic t q -> m ()

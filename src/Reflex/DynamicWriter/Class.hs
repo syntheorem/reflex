@@ -29,5 +29,4 @@ class (Monad m, Monoid w) => DynamicWriter t w m | m -> t w where
   tellDyn = lift . tellDyn
   {-# INLINABLE tellDyn #-}
 
-instance DynamicWriter t w m => DynamicWriter t w (ReaderT r m) where
-  tellDyn = lift . tellDyn
+instance DynamicWriter t w m => DynamicWriter t w (ReaderT r m)
